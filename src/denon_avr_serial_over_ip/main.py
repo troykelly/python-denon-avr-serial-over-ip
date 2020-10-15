@@ -31,7 +31,9 @@ class DenonAVR(object):
         ZONES = [1, 2, 3]
         await self.__protocol.connect()
         for zone in ZONES:
-            self.__zones[zone] = Zone(self.__protocol, zone_number=zone)
+            self.__zones[zone] = Zone(
+                self.__protocol, zone_number=zone, loop=self.__loop
+            )
             await self.__zones[zone].connect()
         return True
 

@@ -1,4 +1,5 @@
 """Denon AVR Zone"""
+import asyncio
 import inspect
 import logging
 
@@ -23,8 +24,9 @@ _MEDIA_MODES = {"Tuner": "TUNER"}
 
 
 class Zone(object):
-    def __init__(self, protocol, zone_number=1) -> None:
+    def __init__(self, protocol, zone_number=1, loop=None) -> None:
         super().__init__()
+        self.__loop = loop or asyncio.get_event_loop()
         self.__protocol = protocol
         self.__zone_number = zone_number
         self.__state = "Off"
@@ -33,7 +35,6 @@ class Zone(object):
         self.__muted = False
         self.__media_source = None
         self.__media_info = None
-        self.__source = None
         self.__source_list = _DEFAULT_INPUTS.copy()
         self.__source_list.update(_MEDIA_MODES)
         if self.auxiliary_zone:
@@ -243,35 +244,43 @@ class Zone(object):
                 return pretty_name
         return "Unknown"
 
-    async def turn_off(self) -> None:
+    def turn_off(self) -> None:
         """Turn off the zone."""
         if self.main_zone:
-            await self.__protocol.send("ZMOFF")
+            self.__loop.create_task(self.__protocol.send("ZMOFF"))
         else:
-            await self.__protocol.send("Z" + str(self.__zone_number) + "OFF")
+            self.__loop.create_task(
+                self.__protocol.send("Z" + str(self.__zone_number) + "OFF")
+            )
 
-    async def turn_on(self) -> None:
+    def turn_on(self) -> None:
         """Turn on the zone."""
         if self.main_zone:
-            await self.__protocol.send("ZMON")
+            self.__loop.create_task(self.__protocol.send("ZMON"))
         else:
-            await self.__protocol.send("Z" + str(self.__zone_number) + "ON")
+            self.__loop.create_task(
+                self.__protocol.send("Z" + str(self.__zone_number) + "ON")
+            )
 
-    async def volume_up(self) -> None:
+    def volume_up(self) -> None:
         """Turn up zone volume."""
         if self.main_zone:
-            await self.__protocol.send("MVUP")
+            self.__loop.create_task(self.__protocol.send("MVUP"))
         else:
-            await self.__protocol.send("Z" + str(self.__zone_number) + "UP")
+            self.__loop.create_task(
+                self.__protocol.send("Z" + str(self.__zone_number) + "UP")
+            )
 
-    async def volume_down(self) -> None:
+    def volume_down(self) -> None:
         """Turn down zone volume."""
         if self.main_zone:
-            await self.__protocol.send("MVDOWN")
+            self.__loop.create_task(self.__protocol.send("MVDOWN"))
         else:
-            await self.__protocol.send("Z" + str(self.__zone_number) + "DOWN")
+            self.__loop.create_task(
+                self.__protocol.send("Z" + str(self.__zone_number) + "DOWN")
+            )
 
-    async def set_volume_level(self, volume) -> None:
+    def set_volume_level(self, volume) -> None:
         """Set zone volume as percentage 0..1"""
         if volume > 1 or volume < 0:
             raise DenonInvalidVolume(
@@ -283,44 +292,54 @@ class Zone(object):
             set_volume = str(round(volume * self.__volume_max)).zfill(2)
 
         if self.main_zone:
-            await self.__protocol.send("MV" + set_volume)
+            self.__loop.create_task(self.__protocol.send("MV" + set_volume))
         else:
-            await self.__protocol.send("Z" + str(self.__zone_number) + set_volume)
-
-    async def mute_volume(self, mute=True) -> None:
-        """Mute (true) or unmute (false) media player."""
-        if self.main_zone:
-            await self.__protocol.send("MU" + ("ON" if mute else "OFF"))
-        else:
-            await self.__protocol.send(
-                "Z" + str(self.__zone_number) + "MU" + ("ON" if mute else "OFF")
+            self.__loop.create_task(
+                self.__protocol.send("Z" + str(self.__zone_number) + set_volume)
             )
 
-    async def media_play(self):
+    def mute_volume(self, mute=True) -> None:
+        """Mute (true) or unmute (false) media player."""
+        if self.main_zone:
+            self.__loop.create_task(
+                self.__protocol.send("MU" + ("ON" if mute else "OFF"))
+            )
+        else:
+            self.__loop.create_task(
+                self.__protocol.send(
+                    "Z" + str(self.__zone_number) + "MU" + ("ON" if mute else "OFF")
+                )
+            )
+
+    def media_play(self):
         """Play media player."""
-        await self.__protocol.send("NS9A")
+        self.__loop.create_task(self.__protocol.send("NS9A"))
 
-    async def media_pause(self):
+    def media_pause(self):
         """Pause media player."""
-        await self.__protocol.send("NS9B")
+        self.__loop.create_task(self.__protocol.send("NS9B"))
 
-    async def media_stop(self):
+    def media_stop(self):
         """Pause media player."""
-        await self.__protocol.send("NS9C")
+        self.__loop.create_task(self.__protocol.send("NS9C"))
 
-    async def media_next_track(self):
+    def media_next_track(self):
         """Send the next track command."""
-        await self.__protocol.send("NS9D")
+        self.__loop.create_task(self.__protocol.send("NS9D"))
 
-    async def media_previous_track(self):
+    def media_previous_track(self):
         """Send the previous track command."""
-        await self.__protocol.send("NS9E")
+        self.__loop.create_task(self.__protocol.send("NS9E"))
 
-    async def select_source(self, source):
+    def select_source(self, source):
         """Select input source."""
         if self.main_zone:
-            await self.__protocol.send("SI" + self.__source_list.get(source))
+            self.__loop.create_task(
+                self.__protocol.send("SI" + self.__source_list.get(source))
+            )
         else:
-            await self.__protocol.send(
-                "Z" + str(self.__zone_number) + self.__source_list.get(source)
+            self.__loop.create_task(
+                self.__protocol.send(
+                    "Z" + str(self.__zone_number) + self.__source_list.get(source)
+                )
             )
