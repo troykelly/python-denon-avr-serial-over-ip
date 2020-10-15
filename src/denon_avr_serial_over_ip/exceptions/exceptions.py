@@ -22,3 +22,9 @@ class DenonInvalidVolume(Error):
         super().__init__()
         self.message = message
         self.volume = volume
+
+
+class DenonPollerAlreadyActive(Error):
+    def __init__(self, message) -> None:
+        super().__init__()
+        self.message = message

@@ -7,6 +7,8 @@ import os
 
 from .protocol import Protocol
 from .zone import Zone
+from .poll import Poll
+from .exceptions import DenonPollerAlreadyActive
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class DenonAVR(object):
 
         self.__protocol = Protocol(loop=self.__loop, host=device_host, port=device_port)
 
+        self.__poll = None
+
     async def connect(self) -> bool:
         ZONES = [1, 2, 3]
         await self.__protocol.connect()
@@ -36,6 +40,12 @@ class DenonAVR(object):
         for zone in ZONES:
             self.__loop.create_task(self.__zones[zone].update())
         return True
+
+    def poll(self, interval) -> None:
+        if self.__poll:
+            raise DenonPollerAlreadyActive("Poller already loaded")
+        self.__poll = Poll(self, self.__loop, interval)
+        self.__poll.start()
 
     @property
     def zone1(self):

@@ -1,3 +1,8 @@
 """Denon AVR Exceptions"""
 
-from .exceptions import DenonCantConnect, DenonNotConnected, DenonInvalidVolume
+from .exceptions import (
+    DenonCantConnect,
+    DenonNotConnected,
+    DenonInvalidVolume,
+    DenonPollerAlreadyActive,
+)
