@@ -23,12 +23,19 @@ class DenonAVR(object):
 
         self.__protocol = Protocol(loop=self.__loop, host=device_host, port=device_port)
 
-    async def connect(self):
+    async def connect(self) -> bool:
         ZONES = [1, 2, 3]
         await self.__protocol.connect()
         for zone in ZONES:
             self.__zones[zone] = Zone(self.__protocol, zone_number=zone)
             await self.__zones[zone].connect()
+        return True
+
+    def update(self) -> bool:
+        ZONES = [1, 2, 3]
+        for zone in ZONES:
+            self.__loop.create_task(self.__zones[zone].update())
+        return True
 
     @property
     def zone1(self):
