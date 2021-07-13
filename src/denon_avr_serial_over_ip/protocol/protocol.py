@@ -101,3 +101,11 @@ class Protocol(object):
         self.__writer.write(bytes)
         self.__last_message = current_ms
         _LOGGER.debug("Sent: %s", message["payload"])
+
+    @property
+    def host(self) -> str:
+        return self.__host
+
+    @property
+    def port(self) -> int:
+        return self.__port

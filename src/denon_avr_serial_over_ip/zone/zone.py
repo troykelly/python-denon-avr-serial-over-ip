@@ -193,6 +193,10 @@ class Zone(object):
         return "Zone " + str(self.zone_number)
 
     @property
+    def unique_id(self) -> str:
+        return "%s:%s/%s" % (self.__protocol.host, self.__protocol.port, self.zone_number)
+
+    @property
     def main_zone(self) -> bool:
         """Is the zone the main zone"""
         if self.__zone_number == 1:
